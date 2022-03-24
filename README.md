@@ -1,6 +1,6 @@
 # Team-Manager
  
-Team-Manager SPA is created with vanila JavaScript, Page.js and Lit-HTML
+Team-Manager SPA is created with vanilla JavaScript, Page.js and Lit-HTML
 
 Required packages to run the project: -Live Server or HTTP-Server (Personal preference) -Lit-HTML -Page.js
 
