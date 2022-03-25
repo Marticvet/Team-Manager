@@ -1,37 +1,58 @@
 import { teamDetailsTemplate } from "./teamsTemplate.js";
 
 const teamInfo = {};
+let _ownerId = undefined;
 let _userId = undefined;
 let _teamId = undefined;
 let _context = undefined;
+let isTeamMember = false;
 
-async function joinTeam(event){
-
+async function joinTeam(){
+    const getTeamMembers = await _context.members.getTeamMembers(_teamId);
+    const isMember = 
+        getTeamMembers.filter(team => team.status !== 'member' || 
+            team.status !== 'pendinding' && 
+            team._ownerId.includes(teamInfo.currentUserId)).length === 0;
+    await _context.members.createMember(_teamId);
+    teamDetailsTemplate(teamInfo, isMember, isTeamMember ? undefined : false);
+    _context.page.redirect(`details/${_teamId}`);
 }
 
 async function leaveTeam(){
-    console.log(`da`);
+    const getTeamMembers = await _context.members.getTeamMembers(_teamId);
+    const memberId = getTeamMembers
+        .filter(team => team.status === 'member' && 
+            team._ownerId.includes(teamInfo.currentUserId))[0]._id;
+    await _context.members.deleteMember(memberId, _ownerId);
+    _context.page.redirect(`details/${_teamId}`);
 }
 
+
 async function cancelRequst(){
-    console.log(`da`);
+    const getTeamMembers = await _context.members.getTeamMembers(_ownerId);
+    const isMember = getTeamMembers.filter(team =>  team.status === 'pendinding' && team._ownerId.includes(teamInfo.currentUserId));
+    const memberId = teamInfo.members.filter(m => m._ownerId === _userId).map(m => m._id).join(' ');
+    await _context.members.deleteMember(memberId,  _ownerId);
+    teamDetailsTemplate(teamInfo, isMember, isTeamMember);
+    _context.page.redirect(`details/${_teamId}`);
 }
 
 async function approveUser(event){
-    const userId = event.target.dataset.id;
-
-    console.log(userId);
+    const memberId = event.target.dataset.memberId;
+    await _context.members.updateMember(memberId, {status: 'member'});
+    _context.page.redirect(`details/${_teamId}`);
 }
 
 async function declineUser(event){
-    const userId = event.target.dataset.id;
-
-    console.log(userId);
+    const memberId = event.target.dataset.memberId;
+    await _context.members.deleteMember(memberId, _ownerId);
+    _context.page.redirect(`details/${_teamId}`);
 }
 
 async function removeUser(event){
-    const userId = await _context.user.getUserId();
-    await _context.members.declineMember(userId);
+    const memberId = event.target.dataset.id;
+    await _context.members.deleteMember(memberId, _ownerId);
+    _context.page.redirect(`details/${_teamId}`);
 }
 
 async function getView(context) {
@@ -42,9 +63,8 @@ async function getView(context) {
     teamInfo.isOwner = await context.user.getUserId();
     teamInfo.username = await context.user.getUsername();
     teamInfo.members = await context.members.getMembershipsForTeamWithUser(_teamId);
-    teamInfo.membersCount = teamInfo.members.length;
+    teamInfo.membersCount = teamInfo.members.filter(members => members.status === 'member').length;
     teamInfo.currentUserId = context.user.getUserId();
-    teamInfo.isMember = teamInfo.members.includes(teamInfo.currentUserId);
     teamInfo.handlers = {
         joinTeam,
         leaveTeam,
@@ -53,9 +73,14 @@ async function getView(context) {
         declineUser,
         removeUser,
     };
-    
+
+    const getTeamMembers = await _context.members.getTeamMembers(_teamId);
+    const isInTeam = getTeamMembers.filter(team => team._ownerId.includes(teamInfo.currentUserId)).length > 0;
+    isTeamMember = teamInfo.members.filter(member => member._ownerId === teamInfo.currentUserId)[0];
+
     _userId = context.user.getUserId();
-    const templateResult = teamDetailsTemplate(teamInfo);
+    _ownerId = teamInfo.team._ownerId;
+    const templateResult = teamDetailsTemplate(teamInfo, isInTeam, isTeamMember);
     context.renderView(templateResult);
 }
 

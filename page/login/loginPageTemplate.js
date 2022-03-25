@@ -13,7 +13,7 @@ export const loginTemplate = (form) => html` <section id="login">
             <input class="action cta" type="submit" value="Sign In" />
         </form>
         <footer class="pad-small">
-            Don't have an account? <a href="#" class="invert">Sign up here</a>
+            Don't have an account? <a href="/register" class="invert">Sign up here</a>
         </footer>
     </article>
 </section>`;

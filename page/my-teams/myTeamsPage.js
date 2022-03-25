@@ -22,8 +22,6 @@ async function getView(context) {
         }
     }
 
-    console.log(teamsInfo.teams);
-
     const templateResult = myTeamsTemplate(teamsInfo);
     context.renderView(templateResult);
 }

@@ -1,20 +1,56 @@
 import { encodeQuery } from "../helpers/queryEndocder.js";
 import authService from "./authService.js";
-import page from "../node_modules/page/page.mjs";
 
 const BASE_MEMBERS_URL = "http://localhost:3030/data/members";
 
 async function getMembers() {
-    const queryObj = {
-        where: `status="member"`,
-    };
+    try {
+        const queryObj = {
+            where: `status="member"`,
+        };
 
-    const query = encodeQuery(queryObj);
-    const getMembers = await fetch(`${BASE_MEMBERS_URL}?${query}`);
+        const query = encodeQuery(queryObj);
+        const getMembers = await fetch(`${BASE_MEMBERS_URL}?${query}`);
+        return await getMembers.json();
+    } catch (err) {
+        throw new Error(err);
+    }
+}
+
+async function getTeamMembers(teamId) {
+    const getMembers = await fetch(
+        `${BASE_MEMBERS_URL}?where=teamId%3D%22${teamId}%22&load=user%3D_ownerId%3Ausers`
+    );
     return await getMembers.json();
 }
 
-async function becomeMember(teamId){
+async function updateMember(memberId, data) {
+    try {
+        const headers = {};
+        headers["Content-Type"] = "application/json";
+        headers["X-Authorization"] = authService.getUserToken();
+
+        const options = {
+            headers,
+            method: "Put",
+            body: JSON.stringify(data),
+        };
+        const updateRespone = await fetch(
+            `${BASE_MEMBERS_URL}/${memberId}`,
+            options
+        );
+
+        if (!updateRespone.ok) {
+            alert("Something went wrong! Please try again.");
+            return;
+        }
+        return await updateRespone.json();
+    } catch (err) {
+        throw new Error(err);
+    }
+}
+
+async function createMember(teamId) {
     try {
         const headers = {};
         headers["Content-Type"] = "application/json";
@@ -23,54 +59,23 @@ async function becomeMember(teamId){
         const options = {
             headers,
             method: "POST",
-            body: JSON.stringify(teamId),
+            body: JSON.stringify({ teamId }),
         };
-        const joinRequest = await fetch(BASE_MEMBERS_URL, options);
+        const createResponse = await fetch(BASE_MEMBERS_URL, options);
 
-        console.log(joinRequest);
-
-        if (!joinRequest.ok) {
+        if (!createResponse.ok) {
             alert("Something went wrong! Please try again.");
-            page.redirect(`details/${teamId}`);
             return;
         }
 
-        return await joinRequest.json();
+        return await createResponse.json();
     } catch (err) {
         throw new Error(err);
     }
 }
 
-async function approveMember(teamId){
+async function deleteMember(memberId) {
     try {
-        const headers = {};
-        headers["Content-Type"] = "application/json";
-        headers["X-Authorization"] = authService.getUserToken();
-
-        const options = {
-            headers,
-            method: "POST",
-            body: JSON.stringify(teamId),
-        };
-        const joinRequest = await fetch(BASE_MEMBERS_URL, options);
-
-        console.log(joinRequest);
-
-        if (!joinRequest.ok) {
-            alert("Something went wrong! Please try again.");
-            page.redirect(`details/${teamId}`);
-            return;
-        }
-
-        return await joinRequest.json();
-    } catch (err) {
-        throw new Error(err);
-    }
-}
-
-async function declineMember(userId){
-    try {
-        console.log(userId);
         const headers = {};
         headers["Content-Type"] = "application/json";
         headers["X-Authorization"] = authService.getUserToken();
@@ -78,48 +83,48 @@ async function declineMember(userId){
         const options = {
             headers,
             method: "Delete",
-  
         };
-        const joinRequest = await fetch(`${BASE_MEMBERS_URL}/${userId}`, options);
+
+        const joinRequest = await fetch(
+            `${BASE_MEMBERS_URL}/${memberId}`,
+            options
+        );
 
         if (!joinRequest.ok) {
             alert("Something went wrong! Please try again.");
             return;
         }
-
     } catch (err) {
         throw new Error(err);
     }
 }
 
-async function getMembershipsForTeamWithUser(teamId){
-    const queryObj = {
-        where: `teamId="${teamId}"`,
-        load: `user=_ownerId:users`
+async function getMembershipsForTeamWithUser(teamId) {
+    try {
+        const queryObj = {
+            where: `teamId="${teamId}"`,
+            load: `user=_ownerId:users`,
+        };
+        const query = encodeQuery(queryObj);
+        const getMemberShips = await fetch(`${BASE_MEMBERS_URL}?${query}`);
+        return await getMemberShips.json();
+    } catch (err) {
+        throw new Error(err);
     }
-    const query = encodeQuery(queryObj);
-    const getMemberShips = await fetch(`${BASE_MEMBERS_URL}?${query}`);
-    return await getMemberShips.json();
 }
 
-
-async function getMembersForTeamWithTeamData(where){
-    const query = encodeQuery({where});
+async function getMembersForTeamWithTeamData(where) {
+    const query = encodeQuery({ where });
     const getMemberShips = await fetch(`${BASE_MEMBERS_URL}?${query}`);
     return await getMemberShips.json();
-}
-
-async function getALlMemberTeams(userId){
-    
-// /data/members?where=_ownerId%3D%22{userId}%22%20AND%20status%3D%22member%22&load=team%3DteamId%3Ateams
 }
 
 export default {
     getMembers,
-    becomeMember,
-    approveMember,
-    declineMember,
+    updateMember,
+    createMember,
+    deleteMember,
     getMembersForTeamWithTeamData,
     getMembershipsForTeamWithUser,
-    getALlMemberTeams
+    getTeamMembers,
 };
