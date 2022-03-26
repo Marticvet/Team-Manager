@@ -15,7 +15,6 @@ import membersService from "./services/membersService.js";
 
 const navbar = document.getElementById("titlebar");
 const application = document.getElementById("application");
-const modal = document.getElementById("modal");
 
 page("/", "/home");
 page("/index.html", "/home");

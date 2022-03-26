@@ -18,14 +18,10 @@ function renderView(templateResult){
     render(templateResult, appElement);
 }
 
-function renderModal(templateResult){
-    render(templateResult, modalElement);
-}
 
 export function decoreteContext(context, next){
     context.renderNav = renderNav;
     context.renderView = renderView;
-    context.renderModal = renderModal;
     next();
 }
 
@@ -34,6 +30,5 @@ export default {
     initialize,
     renderNav,
     renderView,
-    renderModal,
     decoreteContext,
 }
